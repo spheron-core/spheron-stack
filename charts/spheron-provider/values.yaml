@@ -1,0 +1,45 @@
+# Provider Configuration
+
+image:
+  repository: spheronnetwork/unstable-devnet-provider
+  pullPolicy: Always
+  tag: latest-amd64
+  imagePullSecrets: []
+
+provider:
+  domain: ""
+  home: "/spheron-key"
+  walletPath: ""
+  walletSecret: ""
+  paths:
+    home: "/root/.spheron"
+
+logs:
+  token: ""
+  url: ""
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 1024Mi
+  requests:
+    cpu: 1000m
+    memory: 512Mi
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name:
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+
+nodeSelector:
+  node-role.kubernetes.io/master: "true"
+
+tolerations: []
+
+affinity: {}

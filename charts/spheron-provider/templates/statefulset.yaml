@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spheron-provider
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: spheron-provider
+    spheron.network: 'true'
+spec:
+  replicas: 1
+  #strategy:
+  #  type: OnDelete
+  serviceName: spheron-provider
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spheron-provider
+      spheron.network: 'true'
+  template:
+    metadata:
+      annotations:
+        checksum/cm-scripts: {{ include (print $.Template.BasePath "/configmap-scripts.yaml") . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: spheron-provider
+        spheron.network: 'true'
+    spec:
+      {{- with .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: spheron-provider
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          command: ["/bin/bash", "/scripts/run.sh"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SPH_IS_GATEWAY
+              value: "false"
+            - name: KUBE_CONFIG
+              value: "{{ .Values.provider.paths.home }}/.kube/config"
+            - name: SPH_WALLET_PATH
+              value: "{{ .Values.provider.walletPath}}"
+            - name: SPH_WALLET_SECRET
+              value: "{{ .Values.provider.walletSecret}}"
+            - name: SPH_HOME
+              value: "{{ .Values.provider.home}}"
+            - name: SPH_LOGS_TOKEN
+              value: "{{ .Values.logs.token }}"  
+            - name: SPH_LOGS_URL
+              value: "{{ .Values.logs.url }}"                
+
+          ports:
+            - name: api
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - curl --insecure https://localhost:8443/status || exit 1
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
+            successThreshold: 1
+
+          volumeMounts:
+            - name: spheron-key
+              mountPath: /spheron-key
+              readOnly: false
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: provider-config-volume
+              mountPath: /config
+            - name: home
+              mountPath: "{{ .Values.provider.paths.home }}"
+      volumes:
+        - name: spheron-key
+          hostPath:
+            path: /home/spheron/.spheron
+            type: Directory
+        - name: scripts
+          configMap:
+            name: spheron-provider-scripts
+            defaultMode: 0744
+        - name: provider-config-volume
+          hostPath:
+            path: /root/.spheron/k8s-config
+            type: DirectoryOrCreate
+        - name: home
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
