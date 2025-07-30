@@ -20,4 +20,3 @@ controller:
     enable-ssl-passthrough: true
 tcp:
   "8443": "spheron-services/spheron-provider:8443"
-  "8444": "spheron-services/spheron-provider:8444"

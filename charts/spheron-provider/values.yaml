@@ -1,13 +1,12 @@
 # Provider Configuration
 
 image:
-  repository: spheronnetwork/unstable-devnet-provider
+  repository: spheronnetwork/devnet-provider
   pullPolicy: Always
   tag: latest-amd64
   imagePullSecrets: []
 
 provider:
-  domain: ""
   home: "/spheron-key"
   walletPath: ""
   walletSecret: ""
