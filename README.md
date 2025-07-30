@@ -15,6 +15,7 @@ A Helm chart for deploying the Spheron Provider on Kubernetes clusters, includin
 1. Add the Spheron Helm repository (if available):
    ```sh
    git clone <this-repo-url>
+   kubectl apply -f crd/crd.yaml
    cd charts
    ```
 2. Install the chart with your custom values:
